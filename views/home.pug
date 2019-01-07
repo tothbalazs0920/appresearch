@@ -1,0 +1,65 @@
+extends layout
+
+block content
+  h1(id="finished") 
+  if !user
+    p Please sign up or login and click on the buttons at least 10 times. 
+
+  if user
+    p Please click on the blue button first, then click on the green button.
+    p Repeat it for at least 20 times.
+    button.btn.btn-primary(href='#', id="firstButton", role='button', onclick='start()') Click here first
+    .placeBetweenButtons
+
+    button.btn.btn-success(href='#', id="secondButton", role='button', onclick='stop()', disabled="true") Click here next
+    <br>
+    <br>
+    .progress
+      .progress-bar(id="progressbar", role="progressbar", style="width: 0%;", aria-valuenow="0", aria-valuemin="0", aria-valuemax="20")
+    h2(id='myText')
+    
+  script(src='/js/lib/mt.min.js')
+  script.
+    document.getElementById("myText").innerHTML = '0/20 clicks';
+    if(new URL(location.href).searchParams.get("id")) {
+      var id =new URL(location.href).searchParams.get("id");
+      localStorage.setItem('userId', id)
+    }
+    var count = 0;
+    var mt = new MT();
+    
+    var start = function() {
+      mt.record();
+      document.getElementById("firstButton").disabled = true;
+      document.getElementById("secondButton").disabled = false;
+    }
+
+    var stop = function() {
+      mt.stop();
+      var http = new XMLHttpRequest();
+      http.open("POST", "http://localhost:8080/store", true);
+      http.setRequestHeader("Content-Type", "application/json");
+      http.onreadystatechange = function () {
+        if (http.readyState == 4 && (http.status == 200 || http.status == 204)) {
+          mt = new MT();
+          document.getElementById("firstButton").disabled = false;
+          document.getElementById("secondButton").disabled = true;
+          count = count + 1;
+          document.getElementById("myText").innerHTML = count + '/20 clicks';
+          document.getElementById("progressbar").style.width = (5 * count) + '%';
+          //document.getElementById("progressbar").setAttribute("aria-valuenow", count);
+          if(count === 20) {
+            document.getElementById("finished").innerHTML = 'Finished! Thank you!';
+          }
+        }
+      }
+      http.send(JSON.stringify({
+          email: localStorage.getItem('userId'),
+          buffer: mt.getBuffer().buffer
+        }));
+    }
+
+  style.
+    .placeBetweenButtons {
+      height: 250px;
+    }

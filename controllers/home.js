@@ -10,7 +10,7 @@ exports.index = (req, res) => {
 exports.store = (req, res, next) => {
   
   const mouseTrack = new MouseTrack({
-    email: req.body.email,
+    email: req.user.email,
     track: req.body.buffer
   });
 
